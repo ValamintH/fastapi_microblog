@@ -7,5 +7,4 @@ app/routers/__pycache__/
 app/queries/__pycache__/
 app/schemas/__pycache__/
 /app.db
-/example.db
 /app/example.db

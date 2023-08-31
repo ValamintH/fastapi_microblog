@@ -14,3 +14,16 @@ class UserInSchema(BaseModel):
                 "password": "gandalf3047BC",
             }
         }
+
+
+class TokenSchema(BaseModel):
+    access_token: str
+    token_type: str
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "access_token": "eyJhbGciOiJIUzI1NiIs...",
+                "token_type": "bearer",
+            }
+        }
