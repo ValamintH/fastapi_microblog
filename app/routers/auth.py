@@ -1,4 +1,4 @@
-from fastapi import Depends, APIRouter, status, HTTPException, Request
+from fastapi import Depends, APIRouter, status, HTTPException, Response
 from fastapi.security import OAuth2PasswordRequestForm
 from config import ACCESS_TOKEN_EXPIRE_MINUTES
 from datetime import timedelta
@@ -12,15 +12,21 @@ router = APIRouter(prefix="/auth")
 
 
 @router.post("", response_model=TokenSchema)
-async def auth(login_data: OAuth2PasswordRequestForm = Depends(),
+async def auth(response: Response,
+               login_data: OAuth2PasswordRequestForm = Depends(),
                db: Session = Depends(get_db)):
     user = await authenticate_user(username=login_data.username, password=login_data.password, db=db)
+
     if not user:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
                             detail="Incorrect username or password")
+
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(data={"sub": user.username}, expires_delta=access_token_expires)
-    return TokenSchema(
-        access_token=access_token,
-        token_type="bearer"
-    )
+    print("my token: ", access_token)
+    response.set_cookie(key="access_token",
+                        value=f"Bearer {access_token}",
+                        httponly=True,
+                        samesite="none")
+    return TokenSchema(access_token=access_token,
+                       token_type="bearer")

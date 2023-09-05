@@ -17,13 +17,17 @@ class ContextIncludedRoute(APIRoute):
         original_route_handler = super().get_route_handler()
 
         async def custom_route_handler(request: Request) -> Response:
-            new_headers = request.headers.mutablecopy()
+            # authorization: str = request.cookies.get("access_token")
+            # print("access_token is", authorization)
+
+            new_headers = request.headers.mutablecopy() # старый функционал через хэдерс
             new_headers.append(
                 "authorization",
                 f"Bearer {request.session['access_token']}"
             )
             request._headers = new_headers
             request.scope.update(headers=request.headers.raw)
+
             response: Response = await original_route_handler(request)
             return response
 
@@ -52,7 +56,7 @@ async def home(request: Request):
 
 @router.get("/login", response_class=HTMLResponse)
 @router.post("/login", response_class=RedirectResponse)
-async def login(request: Request):
+async def login(request: Request, response: Response):
     form = await LoginForm.from_formdata(request)
     if await form.validate_on_submit():
         form_data = {"username": form.username.data, "password": form.password.data}
@@ -65,7 +69,11 @@ async def login(request: Request):
                                 f"Failed to login user: {token_response.json().get('detail', 'Unknown error')}")
             return RedirectResponse(str(request.url_for("login")), status_code=status.HTTP_302_FOUND)
         else:
-            request.session["access_token"] = token_response.json()["access_token"]
+            # request.session["access_token"] = token_response.json()["access_token"]
+            # response.set_cookie(key="access_token",
+            #                     value=f"Bearer {token_response.json()['access_token']}",
+            #                     httponly=True,
+            #                     samesite="none")
             Flash.flash_message(request, f"Successful user login for {form.username.data}!")
             return RedirectResponse(str(request.url_for("home")), status_code=status.HTTP_302_FOUND)
 
