@@ -23,10 +23,5 @@ async def auth(response: Response,
 
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(data={"sub": user.username}, expires_delta=access_token_expires)
-    print("my token: ", access_token)
-    response.set_cookie(key="access_token",
-                        value=f"Bearer {access_token}",
-                        httponly=True,
-                        samesite="none")
     return TokenSchema(access_token=access_token,
                        token_type="bearer")

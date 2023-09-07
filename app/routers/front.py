@@ -1,6 +1,5 @@
 from fastapi import Request, Depends, APIRouter, status, Response
 from fastapi.responses import HTMLResponse, RedirectResponse
-from fastapi.routing import APIRoute
 from forms import LoginForm
 from flash import templates, Flash
 from models import User
@@ -8,33 +7,10 @@ from db import get_db
 from security import get_current_user
 from sqlalchemy.orm import Session
 from schemas import UserInSchema
-from typing import Callable
 import httpx
 
 
-class ContextIncludedRoute(APIRoute):
-    def get_route_handler(self) -> Callable:
-        original_route_handler = super().get_route_handler()
-
-        async def custom_route_handler(request: Request) -> Response:
-            # authorization: str = request.cookies.get("access_token")
-            # print("access_token is", authorization)
-
-            new_headers = request.headers.mutablecopy() # старый функционал через хэдерс
-            new_headers.append(
-                "authorization",
-                f"Bearer {request.session['access_token']}"
-            )
-            request._headers = new_headers
-            request.scope.update(headers=request.headers.raw)
-
-            response: Response = await original_route_handler(request)
-            return response
-
-        return custom_route_handler
-
-
-router = APIRouter(route_class=ContextIncludedRoute)
+router = APIRouter()
 
 
 @router.get("/", response_class=HTMLResponse)
@@ -69,13 +45,14 @@ async def login(request: Request, response: Response):
                                 f"Failed to login user: {token_response.json().get('detail', 'Unknown error')}")
             return RedirectResponse(str(request.url_for("login")), status_code=status.HTTP_302_FOUND)
         else:
-            # request.session["access_token"] = token_response.json()["access_token"]
-            # response.set_cookie(key="access_token",
-            #                     value=f"Bearer {token_response.json()['access_token']}",
-            #                     httponly=True,
-            #                     samesite="none")
+            response.set_cookie(key="access_token",
+                                value=f"Bearer {token_response.json()['access_token']}",
+                                httponly=True,
+                                samesite="strict")
             Flash.flash_message(request, f"Successful user login for {form.username.data}!")
-            return RedirectResponse(str(request.url_for("home")), status_code=status.HTTP_302_FOUND)
+            return RedirectResponse(str(request.url_for("home")),
+                                    status_code=status.HTTP_302_FOUND,
+                                    headers=response.headers)
 
     return templates.TemplateResponse("login.html", {"request": request, "title": "Sign in", "form": form})
 
