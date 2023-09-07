@@ -1,13 +1,12 @@
 from fastapi import Request, Depends, APIRouter, status, Response
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.routing import APIRoute
-from forms import LoginForm
+from forms import LoginForm, RegistrationForm
 from flash import templates, Flash
 from models import User
 from db import get_db
 from security import get_current_user
 from sqlalchemy.orm import Session
-from schemas import UserInSchema
 from typing import Callable
 import httpx
 
@@ -56,7 +55,6 @@ async def login(request: Request):
     form = await LoginForm.from_formdata(request)
     if await form.validate_on_submit():
         form_data = {"username": form.username.data, "password": form.password.data}
-
         async with httpx.AsyncClient() as client:
             token_response = await client.post(str(request.url_for('auth')), data=form_data)
 
@@ -72,16 +70,25 @@ async def login(request: Request):
     return templates.TemplateResponse("login.html", {"request": request, "title": "Sign in", "form": form})
 
 
-@router.post("/register")
+@router.get("/register", response_class=HTMLResponse)
+@router.post("/register", response_class=HTMLResponse)
 async def register(request: Request,
-                   user: UserInSchema,
                    db: Session = Depends(get_db)):
-    new_user = User(username=user.username,
-                    email=user.email)
-    new_user.set_password(user.password)
-    db.add(new_user)
-    db.commit()
-    return status.HTTP_200_OK
+    form = await RegistrationForm.from_formdata(request)
+
+    if await form.validate_on_submit():
+
+        # this could be a request to backend
+        new_user = User(username=form.username.data,
+                        email=form.email.data)
+        new_user.set_password(form.password.data)
+        db.add(new_user)
+        db.commit()
+
+        Flash.flash_message(request, f"Successfully registered user {form.username.data}!")
+        return RedirectResponse(str(request.url_for("home")), status_code=status.HTTP_302_FOUND)
+
+    return templates.TemplateResponse("register.html", {"request": request, "title": "Registration", "form": form})
 
 
 @router.get("/profile")

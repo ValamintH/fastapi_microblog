@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 from typing import Union
 from db import get_db
 from sqlalchemy.orm import Session
-from queries import get_user
+from queries import get_user_by_name
 
 
 def create_access_token(data: dict, expires_delta: Union[timedelta, None] = None):
@@ -32,14 +32,14 @@ async def get_current_user(db: Session = Depends(get_db), token: str = Depends(o
             raise credentials_exception
     except JWTError:
         raise credentials_exception
-    user = await get_user(username=username, db=db)
+    user = await get_user_by_name(username=username, db=db)
     if user is None:
         raise credentials_exception
     return user
 
 
 async def authenticate_user(username: str, password: str, db: Session):
-    user = await get_user(username=username, db=db)
+    user = await get_user_by_name(username=username, db=db)
     if not user:
         return False
     if not user.check_password(password):
