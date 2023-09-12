@@ -1,15 +1,15 @@
-from fastapi import Request, Depends, APIRouter, status, Response
+from typing import Callable
+
+import httpx
+from db import get_db
+from fastapi import APIRouter, Depends, Request, Response, status
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.routing import APIRoute
+from flash import Flash, templates
 from forms import LoginForm, RegistrationForm
-from flash import templates, Flash
 from models import User
-from db import get_db
 from security import get_current_user
 from sqlalchemy.orm import Session
-from typing import Callable
-from queries import get_user_by_name
-import httpx
 
 
 class ContextIncludedRoute(APIRoute):
@@ -19,8 +19,7 @@ class ContextIncludedRoute(APIRoute):
         async def custom_route_handler(request: Request) -> Response:
             new_headers = request.headers.mutablecopy()
             new_headers.append(
-                "authorization",
-                f"Bearer {request.session['access_token']}"
+                "authorization", f"Bearer {request.session['access_token']}"
             )
             request._headers = new_headers
             request.scope.update(headers=request.headers.raw)
@@ -36,18 +35,20 @@ router = APIRouter(route_class=ContextIncludedRoute)
 @router.get("/", response_class=HTMLResponse)
 @router.get("/home", response_class=HTMLResponse)
 async def home(request: Request):
-    user = {'username': 'Miguel'}
+    user = {"username": "Miguel"}
     posts = [
         {
-            'author': {'username': 'John'},
-            'body': 'Beautiful day in Portland!'
+            "author": {"username": "John"},
+            "body": "Beautiful day in Portland!",
         },
         {
-            'author': {'username': 'Susan'},
-            'body': 'The Avengers movie was so cool!'
-        }
+            "author": {"username": "Susan"},
+            "body": "The Avengers movie was so cool!",
+        },
     ]
-    return templates.TemplateResponse("home.html", {"request": request, "user": user, "posts": posts})
+    return templates.TemplateResponse(
+        "home.html", {"request": request, "user": user, "posts": posts}
+    )
 
 
 @router.get("/login", response_class=HTMLResponse)
@@ -55,52 +56,84 @@ async def home(request: Request):
 async def login(request: Request):
     form = await LoginForm.from_formdata(request)
     if await form.validate_on_submit():
-        form_data = {"username": form.username.data, "password": form.password.data}
+        form_data = {
+            "username": form.username.data,
+            "password": form.password.data,
+        }
         async with httpx.AsyncClient() as client:
-            token_response = await client.post(str(request.url_for('auth')), data=form_data)
+            token_response = await client.post(
+                str(request.url_for("auth")), data=form_data
+            )
 
         if token_response.status_code != status.HTTP_200_OK:
-            Flash.flash_message(request,
-                                f"Failed to login user: {token_response.json().get('detail', 'Unknown error')}")
-            return RedirectResponse(str(request.url_for("login")), status_code=status.HTTP_302_FOUND)
+            error = token_response.json().get("detail", "Unknown error")
+            Flash.flash_message(
+                request,
+                f"Failed to login user: {error}",
+            )
+            return RedirectResponse(
+                str(request.url_for("login")),
+                status_code=status.HTTP_302_FOUND,
+            )
         else:
-            request.session["access_token"] = token_response.json()["access_token"]
-            Flash.flash_message(request, f"Successful user login for {form.username.data}!")
-            return RedirectResponse(str(request.url_for("home")), status_code=status.HTTP_302_FOUND)
+            token = token_response.json()["access_token"]
+            request.session["access_token"] = token
+            Flash.flash_message(
+                request, f"Successful user login for {form.username.data}!"
+            )
+            return RedirectResponse(
+                str(request.url_for("home")), status_code=status.HTTP_302_FOUND
+            )
 
-    return templates.TemplateResponse("login.html", {"request": request, "title": "Sign in", "form": form})
+    return templates.TemplateResponse(
+        "login.html", {"request": request, "title": "Sign in", "form": form}
+    )
 
 
 @router.get("/register", response_class=HTMLResponse)
 @router.post("/register", response_class=HTMLResponse)
-async def register(request: Request,
-                   db: Session = Depends(get_db)):
+async def register(request: Request, db: Session = Depends(get_db)):
     form = await RegistrationForm.from_formdata(request)
 
     if await form.validate_on_submit():
 
         # this could be a request to backend
-        new_user = User(username=form.username.data,
-                        email=form.email.data)
+        new_user = User(username=form.username.data, email=form.email.data)
         new_user.set_password(form.password.data)
         db.add(new_user)
         db.commit()
 
-        Flash.flash_message(request, f"Successfully registered user {form.username.data}!")
-        return RedirectResponse(str(request.url_for("login")), status_code=status.HTTP_302_FOUND)
+        Flash.flash_message(
+            request, f"Successfully registered user {form.username.data}!"
+        )
+        return RedirectResponse(
+            str(request.url_for("login")),
+            status_code=status.HTTP_302_FOUND,
+        )
 
-    return templates.TemplateResponse("register.html", {"request": request, "title": "Registration", "form": form})
+    return templates.TemplateResponse(
+        "register.html",
+        {
+            "request": request,
+            "title": "Registration",
+            "form": form,
+        },
+    )
 
 
 @router.get("/profile")
-async def profile(request: Request,
-                  db: Session = Depends(get_db),
-                  current_user: User = Depends(get_current_user)):
+async def profile(
+    request: Request,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
     posts = [
-        {'author': current_user.username, 'body': 'Test post #1'},
-        {'author': current_user.username, 'body': 'Test post #2'}
+        {"author": current_user.username, "body": "Test post #1"},
+        {"author": current_user.username, "body": "Test post #2"},
     ]
-    return templates.TemplateResponse("user.html", {"request": request, "user": current_user, "posts": posts})
+    return templates.TemplateResponse(
+        "user.html", {"request": request, "user": current_user, "posts": posts}
+    )
 
 
 @router.get("/read_users")

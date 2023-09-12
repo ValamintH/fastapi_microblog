@@ -1,5 +1,5 @@
-from fastapi import Request
 from config import templates
+from fastapi import Request
 
 
 class Flash:
@@ -15,7 +15,10 @@ class Flash:
     def get_flashed_messages(request: Request):
         """Return list with all messages and delete them from session"""
 
-        return request.session.pop("_messages") if "_messages" in request.session else []
+        if "_messages" in request.session:
+            return request.session.pop("_messages")
+        else:
+            return []
 
 
-templates.env.globals['Flash'] = Flash
+templates.env.globals["Flash"] = Flash
