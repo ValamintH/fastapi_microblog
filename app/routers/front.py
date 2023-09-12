@@ -70,6 +70,15 @@ async def login(request: Request, response: Response):
                 headers=response.headers,
             )
 
+    return templates.TemplateResponse(
+        "login.html",
+        {
+            "request": request,
+            "title": "Login",
+            "form": form,
+        },
+    )
+
 
 @router.get("/register", response_class=HTMLResponse)
 @router.post("/register", response_class=HTMLResponse)
