@@ -1,6 +1,6 @@
-from db import Base
-from werkzeug.security import generate_password_hash, check_password_hash
 import sqlalchemy as sa
+from db import Base
+from werkzeug.security import check_password_hash, generate_password_hash
 
 
 class User(Base):
@@ -12,7 +12,7 @@ class User(Base):
     password_hash = sa.Column(sa.String(128))
 
     def __repr__(self):
-        return '<User {}>'.format(self.username)
+        return "<User {}>".format(self.username)
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)

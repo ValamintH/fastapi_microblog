@@ -1,15 +1,15 @@
-from fastapi import Depends, Request, status, HTTPException
+from datetime import datetime, timedelta
+from typing import Dict, Optional, Union
+
+from config import ALGORITHM, SECRET_KEY
+from db import get_db
+from fastapi import Depends, HTTPException, Request, status
+from fastapi.openapi.models import OAuthFlows as OAuthFlowsModel
 from fastapi.security import OAuth2
 from fastapi.security.utils import get_authorization_scheme_param
-from fastapi.openapi.models import OAuthFlows as OAuthFlowsModel
 from jose import JWTError, jwt
-from config import SECRET_KEY, ALGORITHM
-from datetime import datetime, timedelta
-from typing import Union
-from db import get_db
+from queries import get_user_by_name
 from sqlalchemy.orm import Session
-from queries import get_user
-from typing import Optional, Dict
 
 
 class OAuth2PasswordBearerWithCookie(OAuth2):
@@ -22,8 +22,17 @@ class OAuth2PasswordBearerWithCookie(OAuth2):
     ):
         if not scopes:
             scopes = {}
-        flows = OAuthFlowsModel(password={"tokenUrl": tokenUrl, "scopes": scopes})
-        super().__init__(flows=flows, scheme_name=scheme_name, auto_error=auto_error)
+        flows = OAuthFlowsModel(
+            password={
+                "tokenUrl": tokenUrl,
+                "scopes": scopes,
+            }
+        )
+        super().__init__(
+            flows=flows,
+            scheme_name=scheme_name,
+            auto_error=auto_error,
+        )
 
     async def __call__(self, request: Request) -> Optional[str]:
         authorization: str = request.cookies.get("access_token")
@@ -44,7 +53,10 @@ class OAuth2PasswordBearerWithCookie(OAuth2):
 oauth2_scheme = OAuth2PasswordBearerWithCookie(tokenUrl="auth")
 
 
-def create_access_token(data: dict, expires_delta: Union[timedelta, None] = None):
+def create_access_token(
+    data: dict,
+    expires_delta: Union[timedelta, None] = None,
+):
     to_encode = data.copy()
     if expires_delta:
         expire = datetime.utcnow() + expires_delta
@@ -55,7 +67,9 @@ def create_access_token(data: dict, expires_delta: Union[timedelta, None] = None
     return encoded_jwt
 
 
-async def get_current_user(db: Session = Depends(get_db), token: str = Depends(oauth2_scheme)):
+async def get_current_user(
+    db: Session = Depends(get_db), token: str = Depends(oauth2_scheme)
+):
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
@@ -68,14 +82,14 @@ async def get_current_user(db: Session = Depends(get_db), token: str = Depends(o
             raise credentials_exception
     except JWTError:
         raise credentials_exception
-    user = await get_user(username=username, db=db)
+    user = await get_user_by_name(username=username, db=db)
     if user is None:
         raise credentials_exception
     return user
 
 
 async def authenticate_user(username: str, password: str, db: Session):
-    user = await get_user(username=username, db=db)
+    user = await get_user_by_name(username=username, db=db)
     if not user:
         return False
     if not user.check_password(password):
