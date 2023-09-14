@@ -1,6 +1,6 @@
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.2.0
+    rev: v4.4.0
     hooks:
       - id: check-ast
       - id: check-builtin-literals
@@ -15,18 +15,18 @@ repos:
       - id: no-commit-to-branch
         args: [ --branch=master, --branch=release, --branch=main ]
   - repo: https://github.com/pre-commit/mirrors-autopep8
-    rev: 'v1.6.0'
+    rev: 'v2.0.4'
     hooks:
       - id: autopep8
   - repo: https://github.com/psf/black
-    rev: '22.3.0'
+    rev: '23.9.1'
     hooks:
       - id: black
   - repo: https://github.com/PyCQA/isort
-    rev: '5.11.5'
+    rev: '5.12.0'
     hooks:
       - id: isort
   - repo: https://github.com/PyCQA/flake8
-    rev: '4.0.1'
+    rev: '6.1.0'
     hooks:
       - id: flake8

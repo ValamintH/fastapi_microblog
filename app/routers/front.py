@@ -86,7 +86,6 @@ async def register(request: Request, db: Session = Depends(get_db)):
     form = await RegistrationForm.from_formdata(request)
 
     if await form.validate_on_submit():
-
         # this could be a request to backend
         new_user = User(username=form.username.data, email=form.email.data)
         new_user.set_password(form.password.data)
