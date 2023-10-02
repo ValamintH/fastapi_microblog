@@ -12,7 +12,7 @@
             Microblog:
             <a href="{{ request.url_for('home') }}">Home</a>
             {% if user %}
-            <a href="{{ request.url_for('profile') }}">Profile</a>
+            <a href="{{ request.url_for('profile', username=user.username) }}">Profile</a>
             {% else %}
             <a href="{{ request.url_for('login') }}">Login</a>
             {% endif %}

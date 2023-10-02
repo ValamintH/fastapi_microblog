@@ -1,11 +1,23 @@
 {% extends "base.html" %}
 
 {% block content %}
-    <h1>User: {{ user.username }}</h1>
-    <hr>
+    <table>
+        <tr valign="top">
+            <td><img src="{{ page_user.avatar(128) }}"></td>
+            <td>
+                <h1>User: {{ user.username }}</h1>
+                {% if page_user.about_me %}<p>{{ page_user.about_me }}</p>{% endif %}
+                {% if page_user.last_seen %}<p>Last seen on: {{ page_user.last_seen }}</p>{% endif %}
+                {% if user and page_user == user %}
+                <p><a href="{{ url_for('edit_profile') }}">Edit your profile</a></p>
+                {% endif %}
+            </td>
+        </tr>
+    </table>
     {% for post in posts %}
-    <p>
-    {{ post.author.username }} says: <b>{{ post.body }}</b>
-    </p>
+        {% include '_post.html' %}
     {% endfor %}
+    <form action="{{ request.url_for('logout') }}" method="post">
+        <button type="submit" name="logout_button" value="logout_value" class="btn-link">Logout</button>
+    </form>
 {% endblock %}
