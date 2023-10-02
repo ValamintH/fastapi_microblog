@@ -1,6 +1,27 @@
 from pydantic import BaseModel
 
 
+class UserSchema(BaseModel):
+    id: int
+    username: str
+    email: str
+    password_hash: str
+
+    model_config = {
+        "json_schema_extra": {
+            "examples": [
+                {
+                    "id": "Gandalf",
+                    "username": "Gandalf",
+                    "email": "gandalf@mail.com",
+                    "password_hash": "ba7816bf8...",
+                }
+            ]
+        },
+        "from_attributes": True,
+    }
+
+
 class UserInSchema(BaseModel):
     username: str
     email: str

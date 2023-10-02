@@ -1,5 +1,5 @@
 import sqlalchemy as sa
-from db import Base
+from dependencies.db import Base
 from werkzeug.security import check_password_hash, generate_password_hash
 
 

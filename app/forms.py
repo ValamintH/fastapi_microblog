@@ -1,4 +1,4 @@
-from db import get_db
+from dependencies.db import get_db
 from queries import get_user_by_email, get_user_by_name
 from starlette_wtf import StarletteForm
 from wtforms import PasswordField, StringField, SubmitField

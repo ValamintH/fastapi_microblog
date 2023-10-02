@@ -6,5 +6,7 @@ app/alembic/versions/__pycache__/
 app/routers/__pycache__/
 app/queries/__pycache__/
 app/schemas/__pycache__/
+app/dependencies/__pycache__/
+app/models/__pycache__/
 /app.db
 /app/example.db

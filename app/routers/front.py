@@ -1,11 +1,11 @@
 import httpx
-from db import get_db
+from dependencies.db import get_db
+from dependencies.security import get_current_user
 from fastapi import APIRouter, Depends, Request, Response, status
 from fastapi.responses import HTMLResponse, RedirectResponse
 from flash import Flash, templates
 from forms import LoginForm, RegistrationForm
-from models import User
-from security import get_current_user
+from models.users import User
 from sqlalchemy.orm import Session
 
 router = APIRouter()
@@ -13,8 +13,10 @@ router = APIRouter()
 
 @router.get("/", response_class=HTMLResponse)
 @router.get("/home", response_class=HTMLResponse)
-async def home(request: Request):
-    user = {"username": "Miguel"}
+async def home(
+    request: Request,
+    current_user: User = Depends(get_current_user),
+):
     posts = [
         {
             "author": {"username": "John"},
@@ -26,7 +28,7 @@ async def home(request: Request):
         },
     ]
     return templates.TemplateResponse(
-        "home.html", {"request": request, "user": user, "posts": posts}
+        "home.html", {"request": request, "user": current_user, "posts": posts}
     )
 
 
@@ -113,9 +115,14 @@ async def register(request: Request, db: Session = Depends(get_db)):
 @router.get("/profile")
 async def profile(
     request: Request,
-    db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
+    if not current_user:
+        Flash.flash_message(request, "Not logged in")
+        return RedirectResponse(
+            str(request.url_for("home")),
+            status_code=status.HTTP_302_FOUND,
+        )
     posts = [
         {"author": current_user.username, "body": "Test post #1"},
         {"author": current_user.username, "body": "Test post #2"},
