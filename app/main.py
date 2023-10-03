@@ -1,5 +1,5 @@
 import uvicorn
-from config import SECRET_KEY
+from config import SECRET_KEY, templates
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from routers.auth import router as auth_router
@@ -17,6 +17,14 @@ app.mount(
 )
 app.include_router(auth_router)
 app.include_router(front_router)
+
+
+@app.exception_handler(404)
+@app.exception_handler(500)
+@app.exception_handler(403)
+async def not_found_error(request, exc):
+    return templates.TemplateResponse("error.html", {"request": request, "detail": exc.detail})
+
 
 if __name__ == "__main__":
     uvicorn.run(app, port=8080)

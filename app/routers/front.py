@@ -1,10 +1,11 @@
 import httpx
+from config import templates
 from dependencies.db import get_db
 from dependencies.security import get_current_user
 from dependencies.set_last_seen import set_last_seen
-from fastapi import APIRouter, Depends, Request, Response, status
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from fastapi.responses import HTMLResponse, RedirectResponse
-from flash import Flash, templates
+from flash import Flash
 from forms import EditProfileForm, LoginForm, RegistrationForm
 from models.users import User
 from queries import get_user_by_name
@@ -44,9 +45,7 @@ async def login(request: Request, response: Response):
             "password": form.password.data,
         }
         async with httpx.AsyncClient() as client:
-            token_response = await client.post(
-                str(request.url_for("auth")), data=form_data
-            )
+            token_response = await client.post(str(request.url_for("auth")), data=form_data)
 
         if token_response.status_code != status.HTTP_200_OK:
             error = token_response.json().get("detail", "Unknown error")
@@ -65,9 +64,7 @@ async def login(request: Request, response: Response):
                 httponly=True,
                 samesite="strict",
             )
-            Flash.flash_message(
-                request, f"Successful user login for {form.username.data}!"
-            )
+            Flash.flash_message(request, f"Successful user login for {form.username.data}!")
             return RedirectResponse(
                 str(request.url_for("home")),
                 status_code=status.HTTP_302_FOUND,
@@ -110,9 +107,7 @@ async def register(request: Request, db: Session = Depends(get_db)):
         db.add(new_user)
         db.commit()
 
-        Flash.flash_message(
-            request, f"Successfully registered user {form.username.data}!"
-        )
+        Flash.flash_message(request, f"Successfully registered user {form.username.data}!")
         return RedirectResponse(
             str(request.url_for("login")),
             status_code=status.HTTP_302_FOUND,
@@ -137,11 +132,8 @@ async def profile(
 ):
     user = await get_user_by_name(username=username, db=db)
     if not user:
-        Flash.flash_message(request, "Not logged in")
-        return RedirectResponse(
-            str(request.url_for("home")),
-            status_code=status.HTTP_302_FOUND,
-        )
+        raise HTTPException(status_code=404, detail="User not found")
+
     posts = [
         {"author": current_user, "body": "Test post #1"},
         {"author": current_user, "body": "Test post #2"},
@@ -165,11 +157,8 @@ async def edit_profile(
     db: Session = Depends(get_db),
 ):
     if not current_user:
-        Flash.flash_message(request, "Not logged in")
-        return RedirectResponse(
-            str(request.url_for("home")),
-            status_code=status.HTTP_302_FOUND,
-        )
+        raise HTTPException(status_code=403, detail="Not logged in")
+
     form = await EditProfileForm.from_formdata(request)
     if await form.validate_on_submit():
         # this could be a query

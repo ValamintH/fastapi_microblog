@@ -1,0 +1,7 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <h1>An error has occurred</h1>
+    <p>{{ detail }}</p>
+    <p><a href="{{ request.url_for('home') }}">Back</a></p>
+{% endblock %}
