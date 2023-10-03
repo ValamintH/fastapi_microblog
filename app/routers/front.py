@@ -130,20 +130,20 @@ async def profile(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    user = await get_user_by_name(username=username, db=db)
-    if not user:
+    page_user = await get_user_by_name(username=username, db=db)
+    if not page_user:
         raise HTTPException(status_code=404, detail="User not found")
 
     posts = [
-        {"author": current_user, "body": "Test post #1"},
-        {"author": current_user, "body": "Test post #2"},
+        {"author": page_user, "body": "Test post #1"},
+        {"author": page_user, "body": "Test post #2"},
     ]
     return templates.TemplateResponse(
         "user.html",
         {
             "request": request,
             "user": current_user,
-            "page_user": user,
+            "page_user": page_user,
             "posts": posts,
         },
     )
