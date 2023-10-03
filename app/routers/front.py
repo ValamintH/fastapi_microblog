@@ -44,9 +44,7 @@ async def login(request: Request, response: Response):
             "password": form.password.data,
         }
         async with httpx.AsyncClient() as client:
-            token_response = await client.post(
-                str(request.url_for("auth")), data=form_data
-            )
+            token_response = await client.post(str(request.url_for("auth")), data=form_data)
 
         if token_response.status_code != status.HTTP_200_OK:
             error = token_response.json().get("detail", "Unknown error")
@@ -65,9 +63,7 @@ async def login(request: Request, response: Response):
                 httponly=True,
                 samesite="strict",
             )
-            Flash.flash_message(
-                request, f"Successful user login for {form.username.data}!"
-            )
+            Flash.flash_message(request, f"Successful user login for {form.username.data}!")
             return RedirectResponse(
                 str(request.url_for("home")),
                 status_code=status.HTTP_302_FOUND,
@@ -110,9 +106,7 @@ async def register(request: Request, db: Session = Depends(get_db)):
         db.add(new_user)
         db.commit()
 
-        Flash.flash_message(
-            request, f"Successfully registered user {form.username.data}!"
-        )
+        Flash.flash_message(request, f"Successfully registered user {form.username.data}!")
         return RedirectResponse(
             str(request.url_for("login")),
             status_code=status.HTTP_302_FOUND,
@@ -135,23 +129,23 @@ async def profile(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    user = await get_user_by_name(username=username, db=db)
-    if not user:
+    page_user = await get_user_by_name(username=username, db=db)
+    if not page_user:
         Flash.flash_message(request, "Not logged in")
         return RedirectResponse(
             str(request.url_for("home")),
             status_code=status.HTTP_302_FOUND,
         )
     posts = [
-        {"author": current_user, "body": "Test post #1"},
-        {"author": current_user, "body": "Test post #2"},
+        {"author": page_user, "body": "Test post #1"},
+        {"author": page_user, "body": "Test post #2"},
     ]
     return templates.TemplateResponse(
         "user.html",
         {
             "request": request,
             "user": current_user,
-            "page_user": user,
+            "page_user": page_user,
             "posts": posts,
         },
     )
