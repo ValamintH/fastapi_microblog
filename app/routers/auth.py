@@ -1,11 +1,11 @@
 from datetime import timedelta
 
 from config import ACCESS_TOKEN_EXPIRE_MINUTES
-from db import get_db
+from dependencies.db import get_db
+from dependencies.security import authenticate_user, create_access_token
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from schemas import TokenSchema
-from security import authenticate_user, create_access_token
 from sqlalchemy.orm import Session
 
 router = APIRouter(prefix="/auth")

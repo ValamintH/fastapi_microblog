@@ -1,8 +1,7 @@
 from logging.config import fileConfig
 
 from alembic import context
-from db import Base
-from models import *  # noqa
+from models.users import Base, User  # noqa
 from sqlalchemy import engine_from_config, pool
 
 # this is the Alembic Config object, which provides
