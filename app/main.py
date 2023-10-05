@@ -20,11 +20,21 @@ app.include_router(front_router)
 
 
 @app.exception_handler(404)
-@app.exception_handler(500)
 @app.exception_handler(403)
-async def not_found_error(request, exc):
+async def http_exc_handler(request, exc):
     return templates.TemplateResponse(
-        "error.html", {"request": request, "detail": exc.detail}, exc.status_code
+        "error.html",
+        {"request": request, "detail": exc.detail, "status": exc.status_code},
+        exc.status_code,
+    )
+
+
+@app.exception_handler(500)
+async def any_exc_handler(request, _):
+    return templates.TemplateResponse(
+        "error.html",
+        {"request": request, "detail": "Unknown error", "status": 500},
+        500,
     )
 
 
