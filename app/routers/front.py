@@ -98,8 +98,7 @@ def logout(request: Request, response: Response):
 @router.get("/register", response_class=HTMLResponse)
 @router.post("/register", response_class=HTMLResponse)
 async def register(request: Request, db: Session = Depends(get_db)):
-    form = await RegistrationForm.from_formdata(request)
-
+    form = await RegistrationForm.from_formdata(request=request, db=db)
     if await form.validate_on_submit():
         # this could be a query
         new_user = User(username=form.username.data, email=form.email.data)
@@ -159,7 +158,9 @@ async def edit_profile(
     if not current_user:
         raise HTTPException(status_code=403, detail="Not logged in")
 
-    form = await EditProfileForm.from_formdata(request)
+    form = await EditProfileForm.from_formdata(
+        request=request, original_username=current_user.username, db=db
+    )
     if await form.validate_on_submit():
         # this could be a query
         current_user.username = form.username.data
