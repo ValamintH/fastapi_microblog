@@ -1,13 +1,10 @@
-import logging
-import os
-from logging.handlers import RotatingFileHandler, SMTPHandler
-
 import uvicorn
 from config import SECRET_KEY, MailConfig, templates
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from routers.auth import router as auth_router
 from routers.front import router as front_router
+from set_uvicorn_loggers import set_file_logger, set_mail_logger
 from starlette.middleware import Middleware
 from starlette.middleware.sessions import SessionMiddleware
 
@@ -25,32 +22,8 @@ app.include_router(front_router)
 
 @app.on_event("startup")
 async def startup_event():
-    if MailConfig.MAIL_SERVER:
-        auth = None
-        if MailConfig.MAIL_USERNAME or MailConfig.MAIL_PASSWORD:
-            auth = (MailConfig.MAIL_USERNAME, MailConfig.MAIL_PASSWORD)
-        secure = None
-        if MailConfig.MAIL_USE_TLS:
-            secure = ()
-        mail_handler = SMTPHandler(
-            mailhost=(MailConfig.MAIL_SERVER, MailConfig.MAIL_PORT),
-            fromaddr="no-reply@" + MailConfig.MAIL_SERVER,
-            toaddrs=MailConfig.ADMINS,
-            subject="Microblog Failure",
-            credentials=auth,
-            secure=secure,
-        )
-        mail_handler.setLevel(logging.ERROR)
-        logging.getLogger("uvicorn.error").addHandler(mail_handler)
-
-    if not os.path.exists("logs"):
-        os.mkdir("logs")
-    file_handler = RotatingFileHandler("logs/microblog.log", maxBytes=10240, backupCount=10)
-    file_handler.setFormatter(
-        logging.Formatter("%(asctime)s %(levelname)s: %(message)s [in %(pathname)s:%(lineno)d]")
-    )
-    file_handler.setLevel(logging.INFO)
-    logging.getLogger("uvicorn.access").addHandler(file_handler)
+    set_mail_logger(MailConfig)
+    set_file_logger()
 
 
 @app.exception_handler(404)
