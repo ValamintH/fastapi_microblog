@@ -3,7 +3,7 @@ import os
 from logging.handlers import RotatingFileHandler, SMTPHandler
 
 import uvicorn
-from config import MAIL_CONFIG_DICT, SECRET_KEY, templates
+from config import SECRET_KEY, MailConfig, templates
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from routers.auth import router as auth_router
@@ -25,17 +25,17 @@ app.include_router(front_router)
 
 @app.on_event("startup")
 async def startup_event():
-    if MAIL_CONFIG_DICT["MAIL_SERVER"]:
+    if MailConfig.MAIL_SERVER:
         auth = None
-        if MAIL_CONFIG_DICT["MAIL_USERNAME"] or MAIL_CONFIG_DICT["MAIL_PASSWORD"]:
-            auth = (MAIL_CONFIG_DICT["MAIL_USERNAME"], MAIL_CONFIG_DICT["MAIL_PASSWORD"])
+        if MailConfig.MAIL_USERNAME or MailConfig.MAIL_PASSWORD:
+            auth = (MailConfig.MAIL_USERNAME, MailConfig.MAIL_PASSWORD)
         secure = None
-        if MAIL_CONFIG_DICT["MAIL_USE_TLS"]:
+        if MailConfig.MAIL_USE_TLS:
             secure = ()
         mail_handler = SMTPHandler(
-            mailhost=(MAIL_CONFIG_DICT["MAIL_SERVER"], MAIL_CONFIG_DICT["MAIL_PORT"]),
-            fromaddr="no-reply@" + MAIL_CONFIG_DICT["MAIL_SERVER"],
-            toaddrs=MAIL_CONFIG_DICT["ADMINS"],
+            mailhost=(MailConfig.MAIL_SERVER, MailConfig.MAIL_PORT),
+            fromaddr="no-reply@" + MailConfig.MAIL_SERVER,
+            toaddrs=MailConfig.ADMINS,
             subject="Microblog Failure",
             credentials=auth,
             secure=secure,
