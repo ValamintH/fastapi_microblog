@@ -89,13 +89,11 @@ async def is_existing_username(username: str, db: Session):
     user = await get_user_by_name(username=username, db=db)
     if not user:
         return False
-    else:
-        return True
+    return True
 
 
 async def is_existing_email(email: str, db: Session):
     user = await get_user_by_email(email=email, db=db)
     if not user:
         return False
-    else:
-        return True
+    return True
