@@ -3,7 +3,7 @@ import os
 from logging.handlers import RotatingFileHandler, SMTPHandler
 
 
-def set_mail_logger(mail_config):
+def set_mail_handler(mail_config):
     if mail_config.MAIL_SERVER:
         auth = None
         if mail_config.MAIL_USERNAME or mail_config.MAIL_PASSWORD:
@@ -21,12 +21,9 @@ def set_mail_logger(mail_config):
         )
         mail_handler.setLevel(logging.ERROR)
         logging.getLogger("uvicorn.error").addHandler(mail_handler)
-        return True
-    else:
-        return False
 
 
-def set_file_logger():
+def set_file_handler():
     if not os.path.exists("logs"):
         os.mkdir("logs")
     file_handler = RotatingFileHandler("logs/microblog.log", maxBytes=10240, backupCount=10)
