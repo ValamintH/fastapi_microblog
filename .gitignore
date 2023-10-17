@@ -10,3 +10,4 @@ app/dependencies/__pycache__/
 app/models/__pycache__/
 /app.db
 /app/example.db
+/app/logs/

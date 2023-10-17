@@ -38,6 +38,7 @@ async def home(
 @router.get("/login", response_class=HTMLResponse)
 @router.post("/login", response_class=RedirectResponse)
 async def login(request: Request, response: Response):
+    1 / 0
     form = await LoginForm.from_formdata(request)
     if await form.validate_on_submit():
         form_data = {
