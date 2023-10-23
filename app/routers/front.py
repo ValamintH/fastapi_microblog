@@ -1,10 +1,11 @@
 import httpx
+from config import templates
 from dependencies.db import get_db
 from dependencies.security import get_current_user
 from dependencies.set_last_seen import set_last_seen
-from fastapi import APIRouter, Depends, Request, Response, status
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from fastapi.responses import HTMLResponse, RedirectResponse
-from flash import Flash, templates
+from flash import Flash
 from forms import EditProfileForm, LoginForm, RegistrationForm
 from models.users import User
 from queries import get_user_by_name
@@ -97,8 +98,7 @@ def logout(request: Request, response: Response):
 @router.get("/register", response_class=HTMLResponse)
 @router.post("/register", response_class=HTMLResponse)
 async def register(request: Request, db: Session = Depends(get_db)):
-    form = await RegistrationForm.from_formdata(request)
-
+    form = await RegistrationForm.from_formdata(request=request, db=db)
     if await form.validate_on_submit():
         # this could be a query
         new_user = User(username=form.username.data, email=form.email.data)
@@ -131,11 +131,8 @@ async def profile(
 ):
     page_user = await get_user_by_name(username=username, db=db)
     if not page_user:
-        Flash.flash_message(request, "Not logged in")
-        return RedirectResponse(
-            str(request.url_for("home")),
-            status_code=status.HTTP_302_FOUND,
-        )
+        raise HTTPException(status_code=404, detail="User not found")
+
     posts = [
         {"author": page_user, "body": "Test post #1"},
         {"author": page_user, "body": "Test post #2"},
@@ -159,12 +156,11 @@ async def edit_profile(
     db: Session = Depends(get_db),
 ):
     if not current_user:
-        Flash.flash_message(request, "Not logged in")
-        return RedirectResponse(
-            str(request.url_for("home")),
-            status_code=status.HTTP_302_FOUND,
-        )
-    form = await EditProfileForm.from_formdata(request)
+        raise HTTPException(status_code=403, detail="Not logged in")
+
+    form = await EditProfileForm.from_formdata(
+        request=request, original_username=current_user.username, db=db
+    )
     if await form.validate_on_submit():
         # this could be a query
         current_user.username = form.username.data
