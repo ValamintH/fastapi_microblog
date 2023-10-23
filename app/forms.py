@@ -1,4 +1,4 @@
-from queries import get_user_by_email, get_user_by_name
+from dependencies.security import is_existing_email, is_existing_username
 from starlette_wtf import StarletteForm
 from wtforms import PasswordField, StringField, SubmitField, TextAreaField
 from wtforms.validators import DataRequired, Email, EqualTo, Length, ValidationError
@@ -22,13 +22,11 @@ class RegistrationForm(StarletteForm):
         self.db = db
 
     async def async_validate_username(self, username):
-        user = await get_user_by_name(username.data, self.db)
-        if user is not None:
+        if await is_existing_username(username.data, db=self.db):
             raise ValidationError("Please use a different username.")
 
     async def async_validate_email(self, email):
-        user = await get_user_by_email(email.data, self.db)
-        if user is not None:
+        if await is_existing_email(email=email.data, db=self.db):
             raise ValidationError("Please use a different email address.")
 
 
@@ -44,6 +42,5 @@ class EditProfileForm(StarletteForm):
 
     async def async_validate_username(self, username):
         if username.data != self.original_username:
-            user = await get_user_by_name(username=self.username.data, db=self.db)
-            if user:
+            if await is_existing_username(username=username.data, db=self.db):
                 raise ValidationError("Please use a different username.")
