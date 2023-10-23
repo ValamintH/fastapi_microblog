@@ -6,7 +6,7 @@ from logging.handlers import SMTPHandler
 
 from celery import Celery
 
-celery_app = Celery("celery_app", broker="pyamqp://guest@localhost//")
+celery_app = Celery("celery_app", broker="pyamqp://")
 
 
 @celery_app.task
@@ -30,6 +30,7 @@ def send_email(
         smtp.login(username, password)
     smtp.send_message(msg)
     smtp.quit()
+    return 1
 
 
 class MailHandler(SMTPHandler):

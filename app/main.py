@@ -1,6 +1,6 @@
 import uvicorn
 from celery_app import set_mail_handler
-from config import SECRET_KEY, USE_CELERY, MailConfig, templates
+from config import SECRET_KEY, MailConfig, templates
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from routers.auth import router as auth_router
@@ -22,8 +22,7 @@ app.include_router(front_router)
 
 @app.on_event("startup")
 async def startup_event():
-    if USE_CELERY:
-        set_mail_handler(MailConfig())
+    set_mail_handler(MailConfig())
 
 
 @app.exception_handler(404)

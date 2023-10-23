@@ -5,7 +5,6 @@ SECRET_KEY = "secret-key"
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 templates = Jinja2Templates(directory="templates")
-USE_CELERY = True
 
 
 class MailConfig(BaseSettings):
