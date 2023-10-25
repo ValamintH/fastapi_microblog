@@ -10,27 +10,19 @@ celery_app = Celery("celery_app", broker="pyamqp://")
 
 
 @celery_app.task
-def send_email(
-    port, mailhost, timeout, fromaddr, toaddrs, subject, content, username, secure, password
-):
+def send_email(port, mailhost, timeout, fromaddr, toaddrs, subject, content, username, password):
     if not port:
         port = smtplib.SMTP_PORT
-    smtp = smtplib.SMTP(mailhost, port, timeout=timeout)
-    msg = EmailMessage()
-    msg["From"] = fromaddr
-    msg["To"] = ",".join(toaddrs)
-    msg["Subject"] = subject
-    msg["Date"] = email.utils.localtime()
-    msg.set_content(content)
-    if username:
-        if secure is not None:
-            smtp.ehlo()
-            smtp.starttls(*secure)
-            smtp.ehlo()
-        smtp.login(username, password)
-    smtp.send_message(msg)
-    smtp.quit()
-    return 1
+    with smtplib.SMTP_SSL(mailhost, port, timeout=timeout) as smtp:
+        msg = EmailMessage()
+        msg["From"] = fromaddr
+        msg["To"] = ",".join(toaddrs)
+        msg["Subject"] = subject
+        msg["Date"] = email.utils.localtime()
+        msg.set_content(content)
+        if username:
+            smtp.login(username, password)
+        smtp.send_message(msg)
 
 
 class MailHandler(SMTPHandler):
@@ -51,7 +43,6 @@ class MailHandler(SMTPHandler):
                 self.getSubject(record),
                 self.format(record),
                 self.username,
-                self.secure,
                 self.password,
             )
         except Exception:
@@ -68,7 +59,7 @@ def set_mail_handler(mail_config):
             secure = ()
         mail_handler = MailHandler(
             mailhost=(mail_config.MAIL_SERVER, mail_config.MAIL_PORT),
-            fromaddr="no-reply@" + mail_config.MAIL_SERVER,
+            fromaddr=mail_config.MAIL_USERNAME,
             toaddrs=mail_config.ADMINS,
             subject="Microblog Failure",
             credentials=auth,
