@@ -8,7 +8,7 @@ from fastapi.openapi.models import OAuthFlows as OAuthFlowsModel
 from fastapi.security import OAuth2
 from fastapi.security.utils import get_authorization_scheme_param
 from jose import JWTError, jwt
-from queries import get_user_by_name
+from queries import get_user_by_email, get_user_by_name
 from sqlalchemy.orm import Session
 
 
@@ -60,9 +60,7 @@ def create_access_token(
     return encoded_jwt
 
 
-async def get_current_user(
-    db: Session = Depends(get_db), token: str = Depends(oauth2_scheme)
-):
+async def get_current_user(db: Session = Depends(get_db), token: str = Depends(oauth2_scheme)):
     if token is None:
         return None
     try:
@@ -85,3 +83,17 @@ async def authenticate_user(username: str, password: str, db: Session):
     if not user.check_password(password):
         return False
     return user
+
+
+async def is_existing_username(username: str, db: Session):
+    user = await get_user_by_name(username=username, db=db)
+    if not user:
+        return False
+    return True
+
+
+async def is_existing_email(email: str, db: Session):
+    user = await get_user_by_email(email=email, db=db)
+    if not user:
+        return False
+    return True
