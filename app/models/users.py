@@ -2,7 +2,7 @@ from datetime import datetime
 from hashlib import md5
 
 import sqlalchemy as sa
-from dependencies.db import Base
+from dependencies.db import Base, get_db
 from models.posts import Post
 from sqlalchemy.orm import backref, relationship
 from werkzeug.security import check_password_hash, generate_password_hash
@@ -61,9 +61,12 @@ class User(Base):
     def is_following(self, user):
         return self.followed.filter(followers.c.followed_id == user.id).count() > 0
 
-    def followed_posts(self):
-        followed = Post.query.join(followers, (followers.c.followed_id == Post.user_id)).filter(
-            followers.c.follower_id == self.id
+    async def followed_posts(self):
+        db = await get_db().__anext__()
+        followed = (
+            db.query(Post)
+            .join(followers, (followers.c.followed_id == Post.user_id))
+            .filter(followers.c.follower_id == self.id)
         )
-        own = Post.query.filter_by(user_id=self.id)
+        own = db.query(Post).filter_by(user_id=self.id)
         return followed.union(own).order_by(Post.timestamp.desc())

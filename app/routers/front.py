@@ -6,7 +6,7 @@ from dependencies.set_last_seen import set_last_seen
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from fastapi.responses import HTMLResponse, RedirectResponse
 from flash import Flash
-from forms import EditProfileForm, LoginForm, RegistrationForm
+from forms import EditProfileForm, EmptyForm, LoginForm, RegistrationForm
 from models.users import User
 from queries import get_user_by_name
 from sqlalchemy.orm import Session
@@ -132,11 +132,12 @@ async def profile(
     page_user = await get_user_by_name(username=username, db=db)
     if not page_user:
         raise HTTPException(status_code=404, detail="User not found")
-
     posts = [
         {"author": page_user, "body": "Test post #1"},
         {"author": page_user, "body": "Test post #2"},
     ]
+    form = await EmptyForm.from_formdata(request=request)
+
     return templates.TemplateResponse(
         "user.html",
         {
@@ -144,6 +145,7 @@ async def profile(
             "user": current_user,
             "page_user": page_user,
             "posts": posts,
+            "form": form,
         },
     )
 
@@ -178,6 +180,63 @@ async def edit_profile(
         "edit_profile.html",
         {"request": request, "title": "Edit Profile", "form": form},
     )
+
+
+@router.post("/follow/{username}")
+async def follow(
+    request: Request,
+    username: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    form = await EmptyForm.from_formdata(request=request)
+    if await form.validate_on_submit():
+        user = await get_user_by_name(username=username, db=db)
+        if not user:
+            Flash.flash_message(request, f"User {username} not found.")
+            return RedirectResponse(str(request.url_for("home")), status_code=status.HTTP_302_FOUND)
+        if user == current_user:
+            Flash.flash_message(request, "You cannot follow yourself!")
+            return RedirectResponse(
+                str(request.url_for("profile", username=username)),
+                status_code=status.HTTP_302_FOUND,
+            )
+        current_user.follow(user)
+        db.commit()
+        Flash.flash_message(request, f"You are following {username}!")
+        return RedirectResponse(
+            str(request.url_for("profile", username=username)), status_code=status.HTTP_302_FOUND
+        )
+    else:
+        return RedirectResponse(str(request.url_for("home")), status_code=status.HTTP_302_FOUND)
+
+
+@router.post("/unfollow/{username}")
+async def unfollow(
+    request: Request,
+    username: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    form = await EmptyForm.from_formdata(request=request)
+    if await form.validate_on_submit():
+        user = await get_user_by_name(username=username, db=db)
+        if not user:
+            Flash.flash_message(request, f"User {username} not found.")
+            return RedirectResponse(str(request.url_for("home")), status_code=status.HTTP_302_FOUND)
+        if user == current_user:
+            Flash.flash_message(request, "You cannot unfollow yourself!")
+            return RedirectResponse(
+                str(request.url_for("user", username=username)), status_code=status.HTTP_302_FOUND
+            )
+        current_user.unfollow(user)
+        db.commit()
+        Flash.flash_message(request, f"You are not following {username}!")
+        return RedirectResponse(
+            str(request.url_for("user", username=username)), status_code=status.HTTP_302_FOUND
+        )
+    else:
+        return RedirectResponse(str(request.url_for("home")), status_code=status.HTTP_302_FOUND)
 
 
 @router.get("/read_users")

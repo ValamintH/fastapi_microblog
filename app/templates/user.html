@@ -5,11 +5,23 @@
         <tr valign="top">
             <td><img src="{{ page_user.avatar(128) }}"></td>
             <td>
-                <h1>User: {{ user.username }}</h1>
+                <h1>User: {{ page_user.username }}</h1>
                 {% if page_user.about_me %}<p>{{ page_user.about_me }}</p>{% endif %}
                 {% if page_user.last_seen %}<p>Last seen on: {{ page_user.last_seen }}</p>{% endif %}
                 {% if user and page_user == user %}
                 <p><a href="{{ url_for('edit_profile') }}">Edit your profile</a></p>
+                {% elif user and not user.is_following(page_user) %}
+                <p>
+                    <form action="{{ url_for('follow', username=page_user.username) }}" method="post">
+                        {{ form.submit(value='Follow') }}
+                    </form>
+                </p>
+                {% else %}
+                <p>
+                    <form action="{{ url_for('unfollow', username=page_user.username) }}" method="post">
+                        {{ form.submit(value='Unfollow') }}
+                    </form>
+                </p>
                 {% endif %}
             </td>
         </tr>
@@ -17,7 +29,9 @@
     {% for post in posts %}
         {% include '_post.html' %}
     {% endfor %}
+    {% if user and page_user == user %}
     <form action="{{ request.url_for('logout') }}" method="post">
         <button type="submit" name="logout_button" value="logout_value" class="btn-link">Logout</button>
     </form>
+    {% endif %}
 {% endblock %}
