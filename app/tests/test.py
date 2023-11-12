@@ -80,10 +80,10 @@ async def test_follow_posts():
     db.commit()
 
     # check the followed posts of each user
-    f1 = await u1.followed_posts()
-    f2 = await u2.followed_posts()
-    f3 = await u3.followed_posts()
-    f4 = await u4.followed_posts()
+    f1 = u1.followed_posts()
+    f2 = u2.followed_posts()
+    f3 = u3.followed_posts()
+    f4 = u4.followed_posts()
 
     for f, p in zip(f1, [p2, p4, p1]):
         assert repr(f) == repr(p)

@@ -2,17 +2,12 @@ from datetime import datetime
 from hashlib import md5
 
 import sqlalchemy as sa
-from dependencies.db import Base, get_db
+from dependencies.db import Base
+from models.followers import Followers
 from models.posts import Post
 from sqlalchemy.orm import backref, relationship
+from sqlalchemy.orm.session import object_session
 from werkzeug.security import check_password_hash, generate_password_hash
-
-followers = sa.Table(
-    "followers",
-    Base.metadata,
-    sa.Column("follower_id", sa.ForeignKey("users.id")),
-    sa.Column("followed_id", sa.ForeignKey("users.id")),
-)
 
 
 class User(Base):
@@ -27,9 +22,9 @@ class User(Base):
     posts = relationship("Post", backref="author", lazy="dynamic")
     followed = relationship(
         "User",
-        secondary=followers,
-        primaryjoin=(followers.c.follower_id == id),
-        secondaryjoin=(followers.c.followed_id == id),
+        secondary=Followers.__table__,
+        primaryjoin=(Followers.__table__.c.follower_id == id),
+        secondaryjoin=(Followers.__table__.c.followed_id == id),
         backref=backref("followers", lazy="dynamic"),
         lazy="dynamic",
     )
@@ -59,14 +54,14 @@ class User(Base):
             self.followed.remove(user)
 
     def is_following(self, user):
-        return self.followed.filter(followers.c.followed_id == user.id).count() > 0
+        return self.followed.filter(Followers.__table__.c.followed_id == user.id).count() > 0
 
-    async def followed_posts(self):
-        db = await get_db().__anext__()
+    def followed_posts(self):
+        session = object_session(self)
         followed = (
-            db.query(Post)
-            .join(followers, (followers.c.followed_id == Post.user_id))
-            .filter(followers.c.follower_id == self.id)
+            session.query(Post)
+            .join(Followers.__table__, (Followers.__table__.c.followed_id == Post.user_id))  # noqa
+            .filter(Followers.__table__.c.follower_id == self.id)
         )
-        own = db.query(Post).filter_by(user_id=self.id)
+        own = session.query(Post).filter_by(user_id=self.id)
         return followed.union(own).order_by(Post.timestamp.desc())

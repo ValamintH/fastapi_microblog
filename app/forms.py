@@ -46,5 +46,5 @@ class EditProfileForm(StarletteForm):
                 raise ValidationError("Please use a different username.")
 
 
-class EmptyForm(StarletteForm):
+class SubmitForm(StarletteForm):
     submit = SubmitField("Submit")
