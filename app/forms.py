@@ -44,3 +44,7 @@ class EditProfileForm(StarletteForm):
         if username.data != self.original_username:
             if await is_existing_username(username=username.data, db=self.db):
                 raise ValidationError("Please use a different username.")
+
+
+class SubmitForm(StarletteForm):
+    submit = SubmitField("Submit")

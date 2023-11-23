@@ -8,6 +8,11 @@ app/queries/__pycache__/
 app/schemas/__pycache__/
 app/dependencies/__pycache__/
 app/models/__pycache__/
+app/tests/__pycache__/
+app/utility/__pycache__/
 /app.db
 /app/example.db
 /app/logs/
+/app/.pytest_cache/
+/app/tests/.pytest_cache/
+/logs/

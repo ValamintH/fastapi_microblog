@@ -1,13 +1,13 @@
 import uvicorn
-from celery_app import set_mail_handler
 from config import SECRET_KEY, MailConfig, templates
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from routers.auth import router as auth_router
 from routers.front import router as front_router
-from set_uvicorn_handlers import set_file_handler
 from starlette.middleware import Middleware
 from starlette.middleware.sessions import SessionMiddleware
+from utility.celery_app import set_mail_handler
+from utility.set_uvicorn_handlers import set_file_handler
 
 middleware = [Middleware(SessionMiddleware, secret_key=SECRET_KEY)]
 

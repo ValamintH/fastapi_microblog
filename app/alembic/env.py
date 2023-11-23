@@ -1,6 +1,8 @@
 from logging.config import fileConfig
 
 from alembic import context
+from models.followers import Followers  # noqa
+from models.posts import Post  # noqa
 from models.users import Base, User  # noqa
 from sqlalchemy import engine_from_config, pool
 
